@@ -1,1 +1,1 @@
-docker built -t xananax/php .
+docker build -t xananax/php .
