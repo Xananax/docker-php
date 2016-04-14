@@ -16,6 +16,7 @@ Tools available:
 
 - php 5.6
 - composer (available on the $PATH as "composer")
+- php-pear
 - apache
 - node & npm
 - wget
@@ -32,6 +33,7 @@ PHP Extensions available:
 - curl
 - tidy
 - gd
+- openSSL
 
 
 To map the 3000 port to a local 3000 port with nginx:
