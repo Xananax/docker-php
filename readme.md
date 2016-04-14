@@ -20,6 +20,7 @@ Tools available:
 
 - php 5.6
 - composer (available on the $PATH as "composer")
+- php-pear
 - apache
 - node & npm
 - wget
@@ -36,6 +37,7 @@ PHP Extensions available:
 - curl
 - tidy
 - gd
+- openSSL
 
 -----
 
