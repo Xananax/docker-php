@@ -5,6 +5,8 @@ HOST_DIR="$PWD/src"
 CONTAINER_DIR='/var/www/html'
 COMPOSER_HOST_DIR="$PWD/composer"
 COMPOSER_CONTAINER_DIR='/composer'
+DATA_HOST_DIR="$PWD/data"
+DATA_CONTAINER_DIR='/data'
 PORT_HOST=3000
 PORT_CONTAINER=80
 
@@ -16,16 +18,28 @@ fi
 
 if [ -d "$COMPOSER_HOST_DIR" ]; then
 	mkdir -p $COMPOSER_HOST_DIR
+	sudo chmod -R +777 $COMPOSER_HOST_DIR
+	sudo chown -R 33:33 $COMPOSER_HOST_DIR
 fi
+
+if [ -d "$DATA_HOST_DIR" ]; then
+	mkdir -p $DATA_HOST_DIR
+	sudo chmod -R +777 $DATA_HOST_DIR
+	sudo chown -R 33:33 $DATA_HOST_DIR
+fi
+
 docker run \
-  -it \
+  --interactive \
+  --tty \
   --rm \
   --name test \
-  -e COMPOSER_HOST='$COMPOSER_CONTAINER_DIR' \
-  -v "$HOST_DIR":"$CONTAINER_DIR" \
-  -v "$COMPOSER_HOST_DIR":"$COMPOSER_CONTAINER_DIR" \
-  -v "$PWD"/php.ini:/usr/local/etc/php/php.ini \
-  -w "$CONTAINER_DIR" \
-  -p $PORT_HOST:$PORT_CONTAINER \
+  --env COMPOSER_HOME="$COMPOSER_CONTAINER_DIR" \
+  --volume "$HOST_DIR":"$CONTAINER_DIR" \
+  --volume "$COMPOSER_HOST_DIR":"$COMPOSER_CONTAINER_DIR" \
+  --volume "$DATA_HOST_DIR":"$DATA_CONTAINER_DIR" \
+  --volume "$PWD"/php.ini:/usr/local/etc/php/php.ini \
+  --workdir "$CONTAINER_DIR" \
+  --publish $PORT_HOST:$PORT_CONTAINER \
+  --user www-data:www-data \
   xananax/php \
   /bin/bash
