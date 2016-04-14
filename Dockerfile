@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
         libpng12-dev \
         nodejs \
         npm \
+        sudo \
         libsqlite3-0 \
         libsqlite3-dev \
         ucf \
@@ -37,3 +38,5 @@ RUN php -r "readfile('https://getcomposer.org/installer');" > composer-setup.php
     && php composer-setup.php --install-dir=/usr/bin --filename=composer \
     && php -r "unlink('composer-setup.php');"
 RUN a2enmod rewrite
+RUN adduser www-data sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
