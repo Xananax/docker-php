@@ -6,11 +6,15 @@ Based off the [Official Ubuntu PHP Container](https://hub.docker.com/_/php/)
 Build with the "build" script
 Run with "run" script.
 
+once the script has run, run `service apache2 start` in it to start apache
+
 The run script automatically:
 
 - deletes the container on exit
 - maps the *container's* 80 port to the *host's* 3000 port.
 - maps the *host's* "./src" directory to the container's /var/www/html directory (e.g., files get served from ./src)
+- maps “./composer/” to composer’s cache
+
 
 Tools available:
 
@@ -33,6 +37,7 @@ PHP Extensions available:
 - tidy
 - gd
 
+-----
 
 To map the 3000 port to a local 3000 port with nginx:
 
@@ -49,6 +54,13 @@ To map the 3000 port to a local 3000 port with nginx:
         proxy_cache_bypass $http_upgrade;
       }
     }
+```
 
+------
 
+to install silverstripe, run in the docker shell:
+```sh
+composer create-project silverstripe/installer ./ 3.3.1 && \
+composer require silverstripe/sqlite3 1.4.*-dev && \
+composer require "silverstripe/siteconfig:*"
 ```

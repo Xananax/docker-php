@@ -1,1 +1,31 @@
-docker run -it --rm --name test -v "$PWD"/src:/var/www/html -w /var/www/html -p 3000:80  xananax/php /bin/bash
+# vi:syntax=sh
+#!/usr/bin/env bash
+
+HOST_DIR="$PWD/src"
+CONTAINER_DIR='/var/www/html'
+COMPOSER_HOST_DIR="$PWD/composer"
+COMPOSER_CONTAINER_DIR='/composer'
+PORT_HOST=3000
+PORT_CONTAINER=80
+
+if [ -d "$HOST_DIR" ]; then
+	mkdir -p $HOST_DIR
+	sudo chmod -R +777 $HOST_DIR
+	sudo chown -R 33:33 $HOST_DIR
+fi
+
+if [ -d "$COMPOSER_HOST_DIR" ]; then
+	mkdir -p $COMPOSER_HOST_DIR
+fi
+docker run \
+  -it \
+  --rm \
+  --name test \
+  -e COMPOSER_HOST='$COMPOSER_CONTAINER_DIR' \
+  -v "$HOST_DIR":"$CONTAINER_DIR" \
+  -v "$COMPOSER_HOST_DIR":"$COMPOSER_CONTAINER_DIR" \
+  -v "$PWD"/php.ini:/usr/local/etc/php/php.ini \
+  -w "$CONTAINER_DIR" \
+  -p $PORT_HOST:$PORT_CONTAINER \
+  xananax/php \
+  /bin/bash
