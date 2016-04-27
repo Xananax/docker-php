@@ -62,7 +62,17 @@ To map the 3000 port to a local 3000 port with nginx:
 
 to install silverstripe, run in the docker shell:
 ```sh
+cd /var/www/html && \
 composer create-project silverstripe/installer ./ 3.3.1 && \
 composer require silverstripe/sqlite3 1.4.*-dev && \
 composer require "silverstripe/siteconfig:*"
 ```
+
+------
+
+In the shell, run 
+
+```
+sudo service apache2 start
+```
+
