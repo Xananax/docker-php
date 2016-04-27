@@ -1,5 +1,6 @@
 FROM php:5.6-apache
 RUN apt-get update
+RUN apt-get install -y debconf-utils
 RUN apt-get install -y libfreetype6-dev
 RUN apt-get install -y libjpeg62-turbo-dev
 RUN apt-get install -y libmcrypt-dev
@@ -25,6 +26,13 @@ RUN apt-get install -y automake
 RUN apt-get install -y libtool
 RUN apt-get install -y m4
 RUN apt-get install -y sudo
+RUN apt-get install -y postgresql postgresql-contrib
+RUN echo "mysql-server mysql-server/root_password password root_pass" | debconf-set-selections && \
+    echo "mysql-server mysql-server/root_password_again password root_pass" | debconf-set-selections && \
+    sudo apt-get -y install mysql-server
+RUN echo "root:root" | chpasswd
+RUN adduser www-data sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN docker-php-ext-install -j$(nproc) \
 	pdo-mysql \
 	pdo-pgsql \
@@ -40,6 +48,4 @@ RUN php -r "readfile('https://getcomposer.org/installer');" > composer-setup.php
     && php composer-setup.php --install-dir=/usr/bin --filename=composer \
     && php -r "unlink('composer-setup.php');"
 RUN a2enmod rewrite
-RUN echo "root:root" | chpasswd
-RUN adduser www-data sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN postgres createuser --superuser www-data
