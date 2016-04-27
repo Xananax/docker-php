@@ -1,32 +1,33 @@
 FROM php:5.6-apache
 RUN apt-get update
-RUN apt-get install -y debconf-utils
-RUN apt-get install -y libfreetype6-dev
-RUN apt-get install -y libjpeg62-turbo-dev
-RUN apt-get install -y libmcrypt-dev
-RUN apt-get install -y libpng12-dev
-RUN apt-get install -y nodejs
-RUN apt-get install -y npm
-RUN apt-get install -y libsqlite3-0
-RUN apt-get install -y libsqlite3-dev
-RUN apt-get install -y ucf
-RUN apt-get install -y imagemagick
-RUN apt-get install -y wget
-RUN apt-get install -y curl
-RUN apt-get install -y libcurl4-gnutls-dev
-RUN apt-get install -y git
-RUN apt-get install -y libtidy-dev
-RUN apt-get install -y libzip-dev
-RUN apt-get install -y libssl-dev
-RUN apt-get install -y zlib1g-dev
-RUN apt-get install -y php-pear
-RUN apt-get install -y php5-dev
-RUN apt-get install -y autoconf
-RUN apt-get install -y automake
-RUN apt-get install -y libtool
-RUN apt-get install -y m4
-RUN apt-get install -y sudo
-RUN apt-get install -y postgresql postgresql-contrib
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-utils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y debconf-utils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libfreetype6-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libjpeg62-turbo-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libmcrypt-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libpng12-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y npm
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libsqlite3-0
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libsqlite3-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ucf
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y imagemagick
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y curl
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libcurl4-gnutls-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y git
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libtidy-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libzip-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y zlib1g-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y php-pear
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y php5-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y automake
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libtool
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y m4
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y sudo
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
 RUN echo "mysql-server mysql-server/root_password password root_pass" | debconf-set-selections && \
     echo "mysql-server mysql-server/root_password_again password root_pass" | debconf-set-selections && \
     sudo apt-get -y install mysql-server
@@ -34,11 +35,11 @@ RUN echo "root:root" | chpasswd
 RUN adduser www-data sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN docker-php-ext-install -j$(nproc) \
-	pdo-mysql \
-	pdo-pgsql \
-        mcrypt \
-        tidy \
-        zip \
+    pdo_mysql \
+    pdo_pgsql \
+    mcrypt \
+    tidy \
+    zip \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
     && docker-php-ext-install -j$(nproc) gd
 RUN apt-get clean
