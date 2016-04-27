@@ -41,4 +41,5 @@ RUN php -r "readfile('https://getcomposer.org/installer');" > composer-setup.php
     && php -r "unlink('composer-setup.php');"
 RUN a2enmod rewrite
 RUN echo "root:root" | chpasswd
-RUN echo "www-data ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN adduser www-data sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
