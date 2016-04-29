@@ -1,6 +1,13 @@
 # vi:syntax=sh
 #!/usr/bin/env bash
 
+DB_USER="${DB_USER:-root}"
+DB_PASSWORD="${DB_PASSWORD:-password}"
+POSTGRES_USER="$DB_USER"
+POSTGRES_PASSWORD="$DB_PASSWORD"
+MYSQL_USER="$DB_USER"
+MYSQL_PASSWORD="$DB_PASSWORD"
+MYSQL_ROOT_PASSWORD="$DB_PASSWORD"
 # Container name
 CONTAINER_NAME='test'
 # Host directory for source files. The webserver root should be in a /html sub directory
@@ -14,6 +21,11 @@ LOG_HOST_DIR="$PWD/log"
 PORT_HOST=3000
 COMPOSER_CONTAINER_DIR='/composer'
 DATA_CONTAINER_DIR='/data'
+if [ "$USE_MYSQL" = true ]; then
+DATA_CONTAINER_DIR='/var/lib/mysql'
+fi
+# PGSQL
+PGDATA="$DATA_CONTAINER_DIR"
 CONTAINER_DIR='/var/www/'
 LOG_CONTAINER_DIR='/var/log'
 PORT_CONTAINER=80
