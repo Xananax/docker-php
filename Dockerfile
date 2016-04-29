@@ -27,10 +27,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y automake
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y libtool
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y m4
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y sudo
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib postgresql-server-dev-all 
 RUN echo "mysql-server mysql-server/root_password password root_pass" | debconf-set-selections && \
     echo "mysql-server mysql-server/root_password_again password root_pass" | debconf-set-selections && \
-    sudo apt-get -y install mysql-server
+    sudo apt-get -y install mysql-server libmysqlclient-dev
 RUN echo "root:root" | chpasswd
 RUN adduser www-data sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
