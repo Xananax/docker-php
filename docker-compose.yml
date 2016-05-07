@@ -1,4 +1,4 @@
-version: '1'
+version: '2'
 services:
   server:
     build: .
@@ -11,10 +11,10 @@ services:
     ports:
       - 8080:80
     volumes:
-      - ./container/composer:/composer
-      - ./container/data:/data
-      - ./container/log/apache:/var/log
-      - ./container/www:/var/www
+      - "composer:/composer"
+      - "data:/data"
+      - "log_server:/var/log"
+      - "data_server:/var/www"
   db_mysql:
     image: mariadb
     container_name: db_mysql
@@ -24,8 +24,8 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
     volumes:
-      - ./container/data/mysql:/var/lib/mysql
-      - ./container/log/mysql:/var/log
+      - "data_mysql:/var/lib/mysql"
+      - "log_mysql:/var/log"
   db_postgres:
     image: postgres
     container_name: db_postgres
@@ -35,15 +35,15 @@ services:
       POSTGRES_DB: test
       PGDATA: /data
     volumes:
-      - ./container/data/pgsql:/data
-      - ./container/log/pgsql:/var/log
+      - "data_pgsql:/data"
+      - "log_pgsql:/var/log"
 volumes:
-  - ./container/composer
-  - ./container/data
-  - ./container/data/mysql
-  - ./container/data/pgsql
-  - ./container/log
-  - ./container/log/pgsql
-  - ./container/log/mysql
-  - ./container/log/apache
-  - ./container/www
+  - composer:./container/composer
+  - data:./container/data
+  - data_mysql:./container/data/mysql
+  - data_pgsql:./container/data/pgsql
+  - log:./container/log
+  - log_pgsql:./container/log/pgsql
+  - log_mysql:./container/log/mysql
+  - log_server:./container/log/apache
+  - data_server:./container/www
