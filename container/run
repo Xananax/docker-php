@@ -9,20 +9,20 @@ MYSQL_USER="$DB_USER"
 MYSQL_PASSWORD="$DB_PASSWORD"
 MYSQL_ROOT_PASSWORD="$DB_PASSWORD"
 # Container name
-CONTAINER_NAME='test'
+CONTAINER_NAME="${NAME:-test}"
 # Host directory for source files. The webserver root should be in a /html sub directory
-HOST_DIR="$PWD/www"
+HOST_DIR="$PWD"/"${WWW_ROOT:-www}"
 # Directory for composer cache
-COMPOSER_HOST_DIR="$PWD/composer"
+COMPOSER_HOST_DIR="$PWD"/"${COMPOSER:-composer}"
 # Directory for storing databases
-DATA_HOST_DIR="$PWD/data"
+DATA_HOST_DIR="$PWD"/"${DATA_DIR:-data}"
 # Port to map the docker's 80 port to.
-LOG_HOST_DIR="$PWD/log"
-PORT_HOST=3000
+LOG_HOST_DIR="$PWD"/"${LOG_DIR:-log}"
+PORT_HOST=${PORT:-3000}
 COMPOSER_CONTAINER_DIR='/composer'
 DATA_CONTAINER_DIR='/data'
 if [ "$USE_MYSQL" = true ]; then
-DATA_CONTAINER_DIR='/var/lib/mysql'
+	DATA_CONTAINER_DIR='/var/lib/mysql'
 fi
 # PGSQL
 PGDATA="$DATA_CONTAINER_DIR"
@@ -37,38 +37,38 @@ if [ ! -d "$HOST_DIR" ]; then
 	echo "$HOST_DIR does not exist, attempting to create it"
 	mkdir -p "$HOST_DIR/html"
 	touch "$HOST_DIR/.bashrc"
-	echo "sudo service apache2 start" >> "$HOST_DIR/.bashrc"
+	cat ./files/bashrc >> "$HOST_DIR/.bashrc"
 	touch "$HOST_DIR/html/index.php"
-	echo "<html><body>Hello World! Your docker is working. Edit files in <a href=\"file://$HOST_DIR\">$HOST_DIR</a> to get started<br/> <?php echo 'if you can read this, php works' ?></body></html>" >> "$HOST_DIR/html/index.php"
+	cat ./files/index.php | sed "s/%HOST_DIR%/$HOST_DIR/g"  >> "$HOST_DIR/html/index.php"
 	chmod -R +777 $HOST_DIR
-	#chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $HOST_DIR
+	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $HOST_DIR
 else
-	echo "$HOST_DIR exists, skipping"
+	echo "$HOST_DIR exists, skipping creation"
 fi
 
 # create the composer cache if it doesn't exist
 if [ ! -d "$COMPOSER_HOST_DIR" ]; then
 	mkdir -p $COMPOSER_HOST_DIR
 	chmod -R +777 $COMPOSER_HOST_DIR
-	# chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $COMPOSER_HOST_DIR
+	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $COMPOSER_HOST_DIR
 else
-	echo "$COMPOSER_HOST_DIR exists, skipping"
+	echo "$COMPOSER_HOST_DIR exists, skipping creation"
 fi
 
 # create the data dir if it doesn't exist
 if [ ! -d "$DATA_HOST_DIR" ]; then
 	mkdir -p $DATA_HOST_DIR
 	chmod -R +777 $DATA_HOST_DIR
-	# chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
+	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
 else
-	echo "$DATA_HOST_DIR exists, skipping"
+	echo "$DATA_HOST_DIR exists, skipping creation"
 fi
 
 # create the log dir if it doesn't exist
 if [ ! -d "$LOG_HOST_DIR" ]; then
 	mkdir -p $LOG_HOST_DIR
 	chmod -R +777 $LOG_HOST_DIR
-	# chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
+	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
 else
 	echo "$LOG_HOST_DIR exists, skipping"
 fi
@@ -86,11 +86,16 @@ docker run \
   --rm \
   --name $CONTAINER_NAME \
   --env COMPOSER_HOME="$COMPOSER_CONTAINER_DIR" \
+  --env MYSQL_USER="$MYSQL_USER" \
+  --env MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+  --env MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+  --env POSTGRES_USER="$POSTGRES_USER" \
+  --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  --env PGDATA="$PGDATA" \
   --volume "$HOST_DIR":"$CONTAINER_DIR" \
   --volume "$COMPOSER_HOST_DIR":"$COMPOSER_CONTAINER_DIR" \
   --volume "$DATA_HOST_DIR":"$DATA_CONTAINER_DIR" \
   --volume "$LOG_HOST_DIR":"$LOG_CONTAINER_DIR" \
-  --volume "$PWD"/php.ini:/usr/local/etc/php/php.ini \
   --workdir "$CONTAINER_DIR" \
   --publish $PORT_HOST:$PORT_CONTAINER \
   --user www-data:www-data \

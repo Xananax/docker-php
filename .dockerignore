@@ -1,5 +1,1 @@
-composer/*
-data/*
-log/*
-www/*
-
+.gitignore

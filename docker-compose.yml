@@ -1,11 +1,26 @@
 wordpress:
   image: xananax/php
   links:
-    - db:mysql
+    - db_mysql:mysql
   ports:
     - 8080:80
+  volumes:
+    - ./container/composer:/composer
+    # change the below to `:/data` if not using mysql
+    - ./container/data:/var/lib/mysql
+    - ./container/log:/var/log
+    - ./container/www:/var/www
 
-db:
+db_mysql:
   image: mariadb
   environment:
+    MYSQL_USER: root
+    MYSQL_PASSWORD: password
     MYSQL_ROOT_PASSWORD: example
+
+db_postgres:
+  image: postgres
+  environment:
+    POSTGRES_USER: root
+    POSTGRES_PASSWORD: password
+    PGDATA: /data

@@ -50,4 +50,5 @@ RUN php -r "if (hash('SHA384', file_get_contents('composer-setup.php')) === 'a52
 RUN php composer-setup.php --install-dir=/usr/bin --filename=composer
 RUN php -r "unlink('composer-setup.php');"
 
-
+# Add www-data to sudoers
+RUN adduser www-data sudo

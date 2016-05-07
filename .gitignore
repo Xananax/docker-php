@@ -1,4 +1,4 @@
-composer/*
-data/*
-log/*
-www/*
+container/composer/*
+container/data/*
+container/log/*
+container/www/*
