@@ -1,13 +1,38 @@
 # vi:syntax=sh
 #!/usr/bin/env bash
 
-DB_USER="${DB_USER:-root}"
+function docker_down {
+	EXISTS=`docker ps | grep $1`
+	if [ "$EXISTS" ]; then
+	 return 1
+	else
+	 return 0
+	fi
+}
+
+function docker_exists {
+	EXISTS=`docker ps -a | grep $1`
+	if [ "$EXISTS" ]; then
+	 return 0
+	else
+	 return 1
+	fi
+}
+
+
+DB_USER="${DB_USER:-user}"
 DB_PASSWORD="${DB_PASSWORD:-password}"
 POSTGRES_USER="$DB_USER"
 POSTGRES_PASSWORD="$DB_PASSWORD"
 MYSQL_USER="$DB_USER"
 MYSQL_PASSWORD="$DB_PASSWORD"
 MYSQL_ROOT_PASSWORD="$DB_PASSWORD"
+BASE_IMAGE=xananax/php
+# possible values: mariadb, postgres
+DATABASE_IMAGE_MYSQL=mariadb
+DATABASE_CONTAINER_MYSQL_NAME=database_mysql
+DATABASE_IMAGE_PGSQL=postgres
+DATABASE_CONTAINER_PGSQL_NAME=database_postgres
 # Container name
 CONTAINER_NAME="${NAME:-test}"
 # Host directory for source files. The webserver root should be in a /html sub directory
@@ -21,9 +46,6 @@ LOG_HOST_DIR="$PWD"/"${LOG_DIR:-log}"
 PORT_HOST=${PORT:-3000}
 COMPOSER_CONTAINER_DIR='/composer'
 DATA_CONTAINER_DIR='/data'
-if [ "$USE_MYSQL" = true ]; then
-	DATA_CONTAINER_DIR='/var/lib/mysql'
-fi
 # PGSQL
 PGDATA="$DATA_CONTAINER_DIR"
 CONTAINER_DIR='/var/www/'
@@ -39,7 +61,16 @@ if [ ! -d "$HOST_DIR" ]; then
 	touch "$HOST_DIR/.bashrc"
 	cat ./files/bashrc >> "$HOST_DIR/.bashrc"
 	touch "$HOST_DIR/html/index.php"
-	cat ./files/index.php | sed "s/%HOST_DIR%/$HOST_DIR/g"  >> "$HOST_DIR/html/index.php"
+	cat ./files/index.php | \
+		sed -e 's,%HOST_DIR%,'"$HOST_DIR"',g' \
+		-e 's,%MYSQL_USER%,'"$MYSQL_USER"',g' \
+		-e 's,%MYSQL_PASSWORD%,'"$MYSQL_PASSWORD"',g' \
+		-e 's,%POSTGRES_USER%,'"$POSTGRES_USER"',g' \
+		-e 's,%POSTGRES_PASSWORD%,'"$POSTGRES_PASSWORD"',g' \
+		-e 's,%DATA_HOST_DIR%,'"$DATA_HOST_DIR"',g' \
+		-e 's,%DATABASE_CONTAINER_MYSQL_NAME%,'"$DATABASE_CONTAINER_MYSQL_NAME"',g' \
+		-e 's,%DATABASE_CONTAINER_PGSQL_NAME%,'"$DATABASE_CONTAINER_PGSQL_NAME"',g' \
+		>> "$HOST_DIR/html/index.php"
 	chmod -R +777 $HOST_DIR
 	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $HOST_DIR
 else
@@ -57,7 +88,8 @@ fi
 
 # create the data dir if it doesn't exist
 if [ ! -d "$DATA_HOST_DIR" ]; then
-	mkdir -p $DATA_HOST_DIR
+	mkdir -p $DATA_HOST_DIR/mysql
+	mkdir -p $DATA_HOST_DIR/pgsql
 	chmod -R +777 $DATA_HOST_DIR
 	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
 else
@@ -66,20 +98,71 @@ fi
 
 # create the log dir if it doesn't exist
 if [ ! -d "$LOG_HOST_DIR" ]; then
-	mkdir -p $LOG_HOST_DIR
+	mkdir -p $LOG_HOST_DIR/apache
+	mkdir -p $LOG_HOST_DIR/pgsql
+	mkdir -p $LOG_HOST_DIR/mysql
 	chmod -R +777 $LOG_HOST_DIR
 	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
 else
 	echo "$LOG_HOST_DIR exists, skipping"
 fi
-# set the composer cache to the virtual directory
-# map directories
-# map php.ini to the internal php.ini
-# set the working directory inside the docker
-# expose the port
-# set the user to www-data
-# source image
-# run the docker shell
+
+DOCKERLINK=''
+
+if [ "$MYSQL" = true ]; then
+
+	DOCKERLINK="$DOCKERLINK --link $DATABASE_CONTAINER_MYSQL_NAME"
+
+	if docker_down $DATABASE_CONTAINER_MYSQL_NAME; then
+		echo "$DATABASE_CONTAINER_MYSQL_NAME not started"
+		if docker_exists $DATABASE_CONTAINER_MYSQL_NAME; then
+			echo "$DATABASE_CONTAINER_MYSQL_NAME not started, but exists, starting existing container"
+			docker start $DATABASE_CONTAINER_MYSQL_NAME
+		else
+			echo "attempting to create $DATABASE_CONTAINER_MYSQL_NAME"
+			docker run \
+			  -d \
+			  --name $DATABASE_CONTAINER_MYSQL_NAME \
+			  --env MYSQL_USER="$MYSQL_USER" \
+			  --env MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+			  --env MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+			  --volume "$DATA_HOST_DIR/mysql":/var/lib/mysql \
+			  --volume "$LOG_HOST_DIR/pgsql":"$LOG_CONTAINER_DIR" \
+			  $DATABASE_IMAGE_MYSQL
+		fi;
+	else
+		echo "$DATABASE_CONTAINER_MYSQL_NAME started"
+	fi;
+
+fi;
+if [ "$PGSQL" = true ]; then
+
+	DOCKERLINK="$DOCKERLINK --link $DATABASE_CONTAINER_PGSQL_NAME"
+
+	if docker_down $DATABASE_CONTAINER_PGSQL_NAME; then
+		echo "$DATABASE_CONTAINER_PGSQL_NAME not started"
+		if docker_exists $DATABASE_CONTAINER_PGSQL_NAME; then
+			echo "$DATABASE_CONTAINER_PGSQL_NAME not started, but exists, starting existing container"
+			docker start $DATABASE_CONTAINER_PGSQL_NAME
+		else
+			echo "attempting to create $DATABASE_CONTAINER_PGSQL_NAME"
+			docker run \
+			  -d \
+			  --name $DATABASE_CONTAINER_PGSQL_NAME \
+			  --env POSTGRES_USER="$POSTGRES_USER" \
+			  --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+			  --env PGDATA="$PGDATA" \
+			  --volume "$DATA_HOST_DIR/pgsql":"$DATA_CONTAINER_DIR" \
+			  --volume "$LOG_HOST_DIR/pgsql":"$LOG_CONTAINER_DIR" \
+			  --workdir "$CONTAINER_DIR" \
+			  $DATABASE_IMAGE_PGSQL
+		fi;
+	else
+		echo "$DATABASE_CONTAINER_PGSQL_NAME started"
+	fi;
+
+fi;
+
 docker run \
   --interactive \
   --tty \
@@ -95,9 +178,10 @@ docker run \
   --volume "$HOST_DIR":"$CONTAINER_DIR" \
   --volume "$COMPOSER_HOST_DIR":"$COMPOSER_CONTAINER_DIR" \
   --volume "$DATA_HOST_DIR":"$DATA_CONTAINER_DIR" \
-  --volume "$LOG_HOST_DIR":"$LOG_CONTAINER_DIR" \
+  --volume "$LOG_HOST_DIR/apache":"$LOG_CONTAINER_DIR" \
   --workdir "$CONTAINER_DIR" \
   --publish $PORT_HOST:$PORT_CONTAINER \
   --user www-data:www-data \
-  xananax/php \
+  $DOCKERLINK \
+  $BASE_IMAGE \
   /bin/bash

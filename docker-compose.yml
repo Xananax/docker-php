@@ -1,26 +1,49 @@
-wordpress:
-  image: xananax/php
-  links:
-    - db_mysql:mysql
-  ports:
-    - 8080:80
-  volumes:
-    - ./container/composer:/composer
-    # change the below to `:/data` if not using mysql
-    - ./container/data:/var/lib/mysql
-    - ./container/log:/var/log
-    - ./container/www:/var/www
-
-db_mysql:
-  image: mariadb
-  environment:
-    MYSQL_USER: root
-    MYSQL_PASSWORD: password
-    MYSQL_ROOT_PASSWORD: example
-
-db_postgres:
-  image: postgres
-  environment:
-    POSTGRES_USER: root
-    POSTGRES_PASSWORD: password
-    PGDATA: /data
+version: '1'
+services:
+  server:
+    build: .
+    command: /bin/bash
+    container_name: test
+    image: xananax/php
+    links:
+      - db_mysql
+      - db_postgres
+    ports:
+      - 8080:80
+    volumes:
+      - ./container/composer:/composer
+      - ./container/data:/data
+      - ./container/log/apache:/var/log
+      - ./container/www:/var/www
+  db_mysql:
+    image: mariadb
+    container_name: db_mysql
+    environment:
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    volumes:
+      - ./container/data/mysql:/var/lib/mysql
+      - ./container/log/mysql:/var/log
+  db_postgres:
+    image: postgres
+    container_name: db_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test
+      PGDATA: /data
+    volumes:
+      - ./container/data/pgsql:/data
+      - ./container/log/pgsql:/var/log
+volumes:
+  - ./container/composer
+  - ./container/data
+  - ./container/data/mysql
+  - ./container/data/pgsql
+  - ./container/log
+  - ./container/log/pgsql
+  - ./container/log/mysql
+  - ./container/log/apache
+  - ./container/www
