@@ -1,1 +1,1 @@
-docker exec -it %CONTAINER_NAME% /var/www/install.sh
+docker exec -it %CONTAINER_NAME% bash -c "/var/www/install.sh"
