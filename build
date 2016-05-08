@@ -22,7 +22,7 @@ BASE_IMAGE="${BASE_IMAGE:-xananax/php}"
 MYSQL_IMAGE="${MYSQL_IMAGE:-mariadb}"
 MYSQL_CONTAINER_NAME="${MYSQL_CONTAINER_NAME:-database_mysql}"
 PGSQL_IMAGE="${PGSQL_IMAGE:-postgres}"
-PGSQL_CONTAINER_NAME="${PGSQL_CONTAINER_NAME:-database_postgres}"
+PGSQL_CONTAINER_NAME="${PGSQL_CONTAINER_NAME:-database_pgsql}"
 PGSQL_DATABASE="${PGSQL_DATABASE:-$DB_NAME}"
 LOCAL_DIR="${LOCAL_DIR:-$PWD/container}"
 # Container name
@@ -212,3 +212,12 @@ echo "Then open your browser and point it to"
 echo "  \`localhost:$PORT_HOST\`"
 echo "Enjoy!"
 echo ""
+
+RUN_COMPOSE=`confirm "Do you want to run docker-compose?"`
+
+if [ "$CONTINUE" == "no" ]; then
+	echo "exiting..."
+	exit 0
+fi;
+
+docker-compose up

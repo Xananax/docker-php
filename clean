@@ -9,9 +9,9 @@ REL=".${DIR#$PWD}"
 FILE="$PWD/docker-compose.yml"
 
 if [ -d "$DIR" ]; then
-  DEL_DIR=`confirm "Remove all data in \`$REL\` and the generated docker file?"`;
+  DEL_DIR=`confirm "Remove all data in $REL?"`;
   if [ "$DEL_DIR" == "yes" ]; then
-    rm -rf $DIR
+    sudo rm -rf $DIR
   fi
 else
   echo "Nothing found at \`$REL\`, no need to remove anything"
@@ -21,7 +21,7 @@ fi
 if [ -f "$FILE" ]; then
   DEL_FILE=`confirm "Remove generated docker file?"`;
   if [ "$DEL_FILE" == "yes"  ]; then
-    rm -rf $FILE
+    sudo rm -rf $FILE
   fi
 else
   echo "No \`.${FILE#$PWD}\` found, nothing to delete"
@@ -31,3 +31,6 @@ DEL_CONTAINERS=`confirm "Remove all existing containers?"`
 if [ "$DEL_CONTAINERS" == "yes" ]; then
   docker_remove_all_containers
 fi
+
+echo "clean up done, you can now re-run ./build"
+

@@ -23,9 +23,12 @@
 
 $PGSQL_USER="%PGSQL_USER%";
 $PGSQL_PASSWORD="%PGSQL_PASSWORD%";
+$PGSQL_DATABASE="%PGSQL_DATABASE%";
+$PGSQL_HOST="%PGSQL_CONTAINER_NAME%";
 $MYSQL_USER="%MYSQL_USER%";
 $MYSQL_PASSWORD="%MYSQL_PASSWORD%";
-
+$MYSQL_DATABASE="%MYSQL_DATABASE%";
+$MYSQL_HOST="%MYSQL_CONTAINER_NAME%";
 
 function title($n){
     echo "<li><h3>$n</h3></li>";
@@ -38,12 +41,15 @@ function failure($n,$z){
     echo "<li>$n is disabled$z</li>";
 }
 
-function test($name,$host,$user,$pass){
+function test($name,$host,$port,$dbname,$user,$pass){
     title("PDO:$name");
     echo "<ul>";
     try{
         if($user){
-            $dsn="$name:host=$host;user=$user;password=$pass";
+           $_host=$host?"host=$host;":'';
+            $_db=$dbname?"dbname=$dbname;":'';
+            $_port=$port?"port=$port;":'';
+            $dsn = ($_host || $_db || $_port) ? "$name:$_host$_port$_db" : "$name";
             new PDO($dsn,$user,$pass);
             success($name, "on `$host` with `$user` and `$pass`");
         }else{
@@ -57,9 +63,9 @@ function test($name,$host,$user,$pass){
     echo "</ul>";
 }
 
-test('sqlite',":memory",'','');
-test('mysql','%MYSQL_CONTAINER_NAME%:3306',$MYSQL_USER,$MYSQL_PASSWORD);
-test('pgsql','%PGSQL_CONTAINER_NAME%:5432',$PGSQL_USER,$PGSQL_PASSWORD);
+test('sqlite',"_test_sqlite_file.sqlite",'','','','','');
+test('mysql',$MYSQL_HOST,3306,$MYSQL_DATABASE,$MYSQL_USER,$MYSQL_PASSWORD);
+test('pgsql',$PGSQL_HOST,5432,$PGSQL_DATABASE,$PGSQL_USER,$PGSQL_PASSWORD);
 
 ?>
         </ul>
