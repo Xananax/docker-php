@@ -1,0 +1,36 @@
+version: '2'
+services:
+  server:
+    container_name: %CONTAINER_NAME%
+    image: %BASE_IMAGE%
+%DEPENDS_ON%
+    ports:
+      - %PORT_HOST%:80
+    volumes:
+      - %COMPOSER_CACHE_DIR_REL%:/composer
+      - %DATA_DIR_REL%:/data
+      - %SERVER_LOG_DIR_REL%:/var/log
+      - %SERVER_DATA_DIR_REL%:/var/www
+      - %DOCUMENT_DIR_REL%:/var/www/html
+  %MYSQL_CONTAINER_NAME%:
+    image: %MYSQL_IMAGE%
+    container_name: %MYSQL_CONTAINER_NAME%
+    environment:
+      MYSQL_USER: %MYSQL_USER%
+      MYSQL_PASSWORD: %MYSQL_PASSWORD%
+      MYSQL_ROOT_PASSWORD: %MYSQL_ROOT_PASSWORD%
+      MYSQL_DATABASE: %MYSQL_DATABASE%
+    volumes:
+      - %MYSQL_DATA_DIR_REL%:/var/lib/mysql
+      - %MYSQL_LOG_DIR_REL%:/var/log
+  %PGSQL_CONTAINER_NAME%:
+    image: %MYSQL_IMAGE%
+    container_name: %PGSQL_CONTAINER_NAME%
+    environment:
+      POSTGRES_USER: %PGSQL_USER%
+      POSTGRES_PASSWORD: %PGSQL_PASSWORD%
+      POSTGRES_DB: %PGSQL_DATABASE%
+      PGDATA: /data
+    volumes:
+      - %PGSQL_DATA_DIR_REL%:/data
+      - %PGSQL_LOG_DIR_REL%:/var/log

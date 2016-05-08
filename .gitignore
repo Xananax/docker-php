@@ -1,4 +1,1 @@
-container/composer/*
-container/data/*
-container/log/*
-container/www/*
+container/*

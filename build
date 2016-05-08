@@ -1,187 +1,209 @@
 # vi:syntax=sh
 #!/usr/bin/env bash
 
-function docker_down {
-	EXISTS=`docker ps | grep $1`
-	if [ "$EXISTS" ]; then
-	 return 1
-	else
-	 return 0
-	fi
-}
 
-function docker_exists {
-	EXISTS=`docker ps -a | grep $1`
-	if [ "$EXISTS" ]; then
-	 return 0
-	else
-	 return 1
-	fi
-}
+source ./files/utils/confirm.sh
+source ./files/utils/check_dir.sh
 
-
+ROOT="$PWD"
+MODELS_DIR="$PWD/files"
 DB_USER="${DB_USER:-user}"
 DB_PASSWORD="${DB_PASSWORD:-password}"
-POSTGRES_USER="$DB_USER"
-POSTGRES_PASSWORD="$DB_PASSWORD"
-MYSQL_USER="$DB_USER"
-MYSQL_PASSWORD="$DB_PASSWORD"
-MYSQL_ROOT_PASSWORD="$DB_PASSWORD"
-BASE_IMAGE=xananax/php
+DB_NAME="${DB_NAME:-test}"
+PGSQL_USER="${PGSQL_USER:-$DB_USER}"
+PGSQL_PASSWORD="${PGSQL_PASSWORD:-$DB_PASSWORD}"
+MYSQL_USER="${MYSQL_USER:-$DB_USER}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:-$DB_PASSWORD}"
+MYSQL_ROOT_PASSWORD="${MYSQL_PASSWORD:-$DB_PASSWORD}"
+MYSQL_DATABASE="${MYSQL_DATABASE:-$DB_NAME}"
+BASE_IMAGE="${BASE_IMAGE:-xananax/php}"
 # possible values: mariadb, postgres
-DATABASE_IMAGE_MYSQL=mariadb
-DATABASE_CONTAINER_MYSQL_NAME=database_mysql
-DATABASE_IMAGE_PGSQL=postgres
-DATABASE_CONTAINER_PGSQL_NAME=database_postgres
+MYSQL_IMAGE="${MYSQL_IMAGE:-mariadb}"
+MYSQL_CONTAINER_NAME="${MYSQL_CONTAINER_NAME:-database_mysql}"
+PGSQL_IMAGE="${PGSQL_IMAGE:-postgres}"
+PGSQL_CONTAINER_NAME="${PGSQL_CONTAINER_NAME:-database_postgres}"
+PGSQL_DATABASE="${PGSQL_DATABASE:-$DB_NAME}"
+LOCAL_DIR="${LOCAL_DIR:-$PWD/container}"
 # Container name
-CONTAINER_NAME="${NAME:-test}"
+CONTAINER_NAME="${CONTAINER_NAME:-test}"
 # Host directory for source files. The webserver root should be in a /html sub directory
-HOST_DIR="$PWD"/"${WWW_ROOT:-www}"
+SERVER_DATA_DIR="$LOCAL_DIR"/"${SERVER_DATA_DIR:-www}"
+DOCUMENT_DIR="$SERVER_DATA_DIR/html"
 # Directory for composer cache
-COMPOSER_HOST_DIR="$PWD"/"${COMPOSER:-composer}"
+COMPOSER_CACHE_DIR="$LOCAL_DIR"/"${COMPOSER_CACHE_DIR:-composer}"
 # Directory for storing databases
-DATA_HOST_DIR="$PWD"/"${DATA_DIR:-data}"
+DATA_DIR="$LOCAL_DIR"/"${DATA_DIR:-data}"
+MYSQL_DATA_DIR="$DATA_DIR"/"${MYSQL_DATA_DIR:-mysql}"
+PGSQL_DATA_DIR="$DATA_DIR"/"${PGSQL_DATA_DIR:-pgsql}"
 # Port to map the docker's 80 port to.
-LOG_HOST_DIR="$PWD"/"${LOG_DIR:-log}"
-PORT_HOST=${PORT:-3000}
-COMPOSER_CONTAINER_DIR='/composer'
-DATA_CONTAINER_DIR='/data'
+LOG_DIR="$LOCAL_DIR"/"${LOG_DIR:-log}"
+SERVER_LOG_DIR="$LOG_DIR/apache"
+MYSQL_LOG_DIR="$LOG_DIR/mysql"
+PGSQL_LOG_DIR="$LOG_DIR/pgsql"
+PORT_HOST="${PORT:-3000}"
+USE_MYSQL="${USE_MYSQL:0}"
+USE_PGSQL="${USE_PGSQL:0}"
 # PGSQL
-PGDATA="$DATA_CONTAINER_DIR"
-CONTAINER_DIR='/var/www/'
-LOG_CONTAINER_DIR='/var/log'
 PORT_CONTAINER=80
 # User ID of www-data in the docker
 CONTAINER_USER_ID=33
-
-# Create the server base if it doesn't exist
-if [ ! -d "$HOST_DIR" ]; then
-	echo "$HOST_DIR does not exist, attempting to create it"
-	mkdir -p "$HOST_DIR/html"
-	touch "$HOST_DIR/.bashrc"
-	cat ./files/bashrc >> "$HOST_DIR/.bashrc"
-	touch "$HOST_DIR/html/index.php"
-	cat ./files/index.php | \
-		sed -e 's,%HOST_DIR%,'"$HOST_DIR"',g' \
-		-e 's,%MYSQL_USER%,'"$MYSQL_USER"',g' \
-		-e 's,%MYSQL_PASSWORD%,'"$MYSQL_PASSWORD"',g' \
-		-e 's,%POSTGRES_USER%,'"$POSTGRES_USER"',g' \
-		-e 's,%POSTGRES_PASSWORD%,'"$POSTGRES_PASSWORD"',g' \
-		-e 's,%DATA_HOST_DIR%,'"$DATA_HOST_DIR"',g' \
-		-e 's,%DATABASE_CONTAINER_MYSQL_NAME%,'"$DATABASE_CONTAINER_MYSQL_NAME"',g' \
-		-e 's,%DATABASE_CONTAINER_PGSQL_NAME%,'"$DATABASE_CONTAINER_PGSQL_NAME"',g' \
-		>> "$HOST_DIR/html/index.php"
-	chmod -R +777 $HOST_DIR
-	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $HOST_DIR
-else
-	echo "$HOST_DIR exists, skipping creation"
+if [ "$USE_MYSQL" ] || [ "$USE_PGSQL" ]; then
+	USING_DATABASE=true
 fi
 
+SERVER_DATA_DIR_REL=".${SERVER_DATA_DIR#$ROOT}"
+DOCUMENT_DIR_REL=".${DOCUMENT_DIR#$ROOT}"
+LOG_DIR_REL=".${LOG_DIR#$ROOT}"
+SERVER_LOG_DIR_REL=".${SERVER_LOG_DIR#$ROOT}"
+MYSQL_LOG_DIR_REL=".${MYSQL_LOG_DIR#$ROOT}"
+PGSQL_LOG_DIR_REL=".${PGSQL_LOG_DIR#$ROOT}"
+MODELS_DIR_REL=".${MODELS_DIR#$ROOT}"
+MYSQL_DATA_DIR_REL=".${MYSQL_DATA_DIR#$ROOT}"
+PGSQL_DATA_DIR_REL=".${PGSQL_DATA_DIR#$ROOT}"
+COMPOSER_CACHE_DIR_REL=".${COMPOSER_CACHE_DIR#$ROOT}"
+DATA_DIR_REL=".${DATA_DIR#$ROOT}"
+
+function title(){
+	echo ""
+	echo "---- $1 ----"
+	echo ""
+}
+
+
+function replace(){
+	DEPENDS_ON=''
+	if [ "$USING_DATABASE" ]; then
+		DEPENDS_ON="    depends_on:\n"
+		if [ "$USE_MYSQL" ]; then
+			DEPENDS_ON="$DEPENDS_ON      - $MYSQL_CONTAINER_NAME\n"
+		fi
+		if [ "$USE_PGSQL" ]; then
+			DEPENDS_ON="$DEPENDS_ON      - $PGSQL_CONTAINER_NAME\n"
+		fi
+	fi
+	touch "$2" && \
+	cat "$1" | \
+	sed \
+	  -e 's,%SERVER_DATA_DIR%,'"$SERVER_DATA_DIR"',g' \
+	  -e 's,%PORT_HOST%,'"$PORT_HOST"',g' \
+	  -e 's,%BASE_IMAGE%,'"$BASE_IMAGE"',g' \
+	  -e 's,%CONTAINER_NAME%,'"$CONTAINER_NAME"',g' \
+	  -e 's,%SERVER_DATA_DIR_REL%,'"$SERVER_DATA_DIR_REL"',g' \
+	  -e 's,%DOCUMENT_DIR%,'"$DOCUMENT_DIR"',g' \
+	  -e 's,%DOCUMENT_DIR_REL%,'"$DOCUMENT_DIR_REL"',g' \
+	  -e 's,%DATA_DIR%,'"$DATA_DIR"',g' \
+	  -e 's,%MYSQL_IMAGE%,'"$MYSQL_IMAGE"',g' \
+	  -e 's,%MYSQL_USER%,'"$MYSQL_USER"',g' \
+	  -e 's,%MYSQL_PASSWORD%,'"$MYSQL_PASSWORD"',g' \
+	  -e 's,%MYSQL_ROOT_PASSWORD%,'"$MYSQL_ROOT_PASSWORD"',g' \
+	  -e 's,%MYSQL_DATA_DIR_REL%,'"$MYSQL_DATA_DIR_REL"',g' \
+	  -e 's,%MYSQL_LOG_DIR_REL%,'"$MYSQL_LOG_DIR_REL"',g' \
+	  -e 's,%MYSQL_CONTAINER_NAME%,'"$MYSQL_CONTAINER_NAME"',g' \
+	  -e 's,%MYSQL_DATABASE%,'"$MYSQL_DATABASE"',g' \
+	  -e 's,%PGSQL_IMAGE%,'"$PGSQL_IMAGE"',g' \
+	  -e 's,%PGSQL_USER%,'"$PGSQL_USER"',g' \
+	  -e 's,%PGSQL_PASSWORD%,'"$PGSQL_PASSWORD"',g' \
+	  -e 's,%PGSQL_DATA_DIR_REL%,'"$PGSQL_DATA_DIR_REL"',g' \
+	  -e 's,%PGSQL_LOG_DIR_REL%,'"$PGSQL_LOG_DIR_REL"',g' \
+	  -e 's,%PGSQL_CONTAINER_NAME%,'"$PGSQL_CONTAINER_NAME"',g' \
+	  -e 's,%PGSQL_DATABASE%,'"$PGSQL_DATABASE"',g' \
+	  -e 's,%COMPOSER_CACHE_DIR%,'"$COMPOSER_CACHE_DIR"',g' \
+	  -e 's,%COMPOSER_CACHE_DIR_REL%,'"$COMPOSER_CACHE_DIR_REL"',g' \
+	  -e 's,%DATA_DIR_REL%,'"$DATA_DIR_REL"',g' \
+	  -e 's,%SERVER_LOG_DIR_REL%,'"$SERVER_LOG_DIR_REL"',g' \
+	  -e 's,%DEPENDS_ON%,'"$DEPENDS_ON"',g' \
+	>> "$2"
+}
+
+title "BASE"
+echo "This script will create the needed directories and set the environment variables"
+echo "server root directory will be:\`$SERVER_DATA_DIR_REL\`"
+echo "documents directory will be:\`$DOCUMENT_DIR_REL\`"
+echo "logs will be available in: \`$LOG_DIR_REL\`"
+echo "server will be available on the host at:\`localhost:$PORT_HOST\`"
+echo ""
+echo "Everything in \`$MODELS_DIR_REL\` will be copied to \`$SERVER_DATA_DIR_REL\`"
+echo "And variables will be replaced accordingly"
+title "DATABASES"
+if [ "$USING_DATABASE" ]; then
+	if [ "$USE_MYSQL" ]; then 
+		echo ""
+		echo "MySQL will be used"
+		echo "databases will be inside \`$MYSQL_DATA_DIR_REL\`"
+		echo "with user \`$MYSQL_USER\` and password \`$MYSQL_PASSWORD\`"
+		echo "logs will be available in \`$MYSQL_LOG_DIR_REL\`"
+		echo "MySQL will be available inside the container as \`$MYSQL_CONTAINER_NAME:3306\`"
+		echo "a database \`$MYSQL_DATABASE\` will be created"
+	fi;
+	if [ "$USE_PGSQL" ]; then 
+		echo ""
+		echo "PostgresSQL will be used"
+		echo "databases will be inside \`$PGSQL_DATA_DIR_REL\`"
+		echo "with user \`$PGSQL_USER\` and password \`$PGSQL_PASSWORD\`"
+		echo "logs will be available in \`$PGSQL_LOG_DIR_REL\`"
+		echo "PGSQL will be available inside the container as \`$PGSQL_CONTAINER_NAME:5432\`"
+		echo "a database \`$PGSQL_DATABASE\` will be created"
+	fi;
+else
+	echo "Not using MySQL nor PostgresSQL, you will only have access to SQLite inside the container"
+fi;
+echo ""
+
+CONTINUE=`confirm "Does this summary seem correct?"`
+
+if [ "$CONTINUE" == "no" ]; then
+	echo "exiting..."
+	exit 1
+fi;
+
+title "COMPOSER"
 # create the composer cache if it doesn't exist
-if [ ! -d "$COMPOSER_HOST_DIR" ]; then
-	mkdir -p $COMPOSER_HOST_DIR
-	chmod -R +777 $COMPOSER_HOST_DIR
-	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $COMPOSER_HOST_DIR
-else
-	echo "$COMPOSER_HOST_DIR exists, skipping creation"
+check_dir "$COMPOSER_CACHE_DIR" "$COMPOSER_CACHE_DIR_REL" "$CONTAINER_USER_ID"
+
+title "DATA DIRECTORIES"
+check_dir "$DATA_DIR" "$DATA_DIR_REL" "$CONTAINER_USER_ID"
+
+title "LOG DIRECTORIES"
+check_dir "$SERVER_LOG_DIR" "$SERVER_LOG_DIR_REL" "$CONTAINER_USER_ID"
+
+if [ "$USE_MYSQL" ]; then
+	
+	title "DATA - MySQL"
+	check_dir "$MYSQL_DATA_DIR" "$MYSQL_DATA_DIR_REL" "$CONTAINER_USER_ID"
+	check_dir "$MYSQL_LOG_DIR" "$MYSQL_LOG_DIR_REL" "$CONTAINER_USER_ID"
+	
 fi
 
-# create the data dir if it doesn't exist
-if [ ! -d "$DATA_HOST_DIR" ]; then
-	mkdir -p $DATA_HOST_DIR/mysql
-	mkdir -p $DATA_HOST_DIR/pgsql
-	chmod -R +777 $DATA_HOST_DIR
-	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
-else
-	echo "$DATA_HOST_DIR exists, skipping creation"
+if [ "$USE_PGSQL" ]; then
+	
+	title "DATA - PostgresSQL"
+	check_dir "$PGSQL_DATA_DIR" "$PGSQL_DATA_DIR_REL" "$CONTAINER_USER_ID"
+	check_dir "$PGSQL_LOG_DIR" "$PGSQL_LOG_DIR_REL" "$CONTAINER_USER_ID"
+	
 fi
 
-# create the log dir if it doesn't exist
-if [ ! -d "$LOG_HOST_DIR" ]; then
-	mkdir -p $LOG_HOST_DIR/apache
-	mkdir -p $LOG_HOST_DIR/pgsql
-	mkdir -p $LOG_HOST_DIR/mysql
-	chmod -R +777 $LOG_HOST_DIR
-	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $DATA_HOST_DIR
+title "MAIN FILES"
+# Create the server base if it doesn't exist
+if [ ! -d "$DOCUMENT_DIR" ]; then
+	echo "\`$DOCUMENT_DIR_REL\` does not exist, attempting to create it"
+	mkdir -p "$DOCUMENT_DIR"
+	replace "$MODELS_DIR/bashrc" "$SERVER_DATA_DIR/.bashrc"
+	replace "$MODELS_DIR/index.php" "$DOCUMENT_DIR/index.php"
+	chmod -R +777 $SERVER_DATA_DIR
+	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $SERVER_DATA_DIR
 else
-	echo "$LOG_HOST_DIR exists, skipping"
+	echo "\`$DOCUMENT_DIR_REL\` exists, skipping creation"
 fi
 
-DOCKERLINK=''
+title "DOCKER-COMPOSE"
+if [ ! -f "$LOCAL_DIR/docker-compose.yml" ]; then
+	echo "\`docker-compose does\` not exist, attempting to create it"
+	replace "$MODELS_DIR/docker-compose.yml" "$LOCAL_DIR/docker-compose.yml"
+else
+	echo "\`docker-compose.yml\` exists, skipping creation"
+fi
 
-if [ "$MYSQL" = true ]; then
-
-	DOCKERLINK="$DOCKERLINK --link $DATABASE_CONTAINER_MYSQL_NAME"
-
-	if docker_down $DATABASE_CONTAINER_MYSQL_NAME; then
-		echo "$DATABASE_CONTAINER_MYSQL_NAME not started"
-		if docker_exists $DATABASE_CONTAINER_MYSQL_NAME; then
-			echo "$DATABASE_CONTAINER_MYSQL_NAME not started, but exists, starting existing container"
-			docker start $DATABASE_CONTAINER_MYSQL_NAME
-		else
-			echo "attempting to create $DATABASE_CONTAINER_MYSQL_NAME"
-			docker run \
-			  -d \
-			  --name $DATABASE_CONTAINER_MYSQL_NAME \
-			  --env MYSQL_USER="$MYSQL_USER" \
-			  --env MYSQL_PASSWORD="$MYSQL_PASSWORD" \
-			  --env MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
-			  --volume "$DATA_HOST_DIR/mysql":/var/lib/mysql \
-			  --volume "$LOG_HOST_DIR/pgsql":"$LOG_CONTAINER_DIR" \
-			  $DATABASE_IMAGE_MYSQL
-		fi;
-	else
-		echo "$DATABASE_CONTAINER_MYSQL_NAME started"
-	fi;
-
-fi;
-if [ "$PGSQL" = true ]; then
-
-	DOCKERLINK="$DOCKERLINK --link $DATABASE_CONTAINER_PGSQL_NAME"
-
-	if docker_down $DATABASE_CONTAINER_PGSQL_NAME; then
-		echo "$DATABASE_CONTAINER_PGSQL_NAME not started"
-		if docker_exists $DATABASE_CONTAINER_PGSQL_NAME; then
-			echo "$DATABASE_CONTAINER_PGSQL_NAME not started, but exists, starting existing container"
-			docker start $DATABASE_CONTAINER_PGSQL_NAME
-		else
-			echo "attempting to create $DATABASE_CONTAINER_PGSQL_NAME"
-			docker run \
-			  -d \
-			  --name $DATABASE_CONTAINER_PGSQL_NAME \
-			  --env POSTGRES_USER="$POSTGRES_USER" \
-			  --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-			  --env PGDATA="$PGDATA" \
-			  --volume "$DATA_HOST_DIR/pgsql":"$DATA_CONTAINER_DIR" \
-			  --volume "$LOG_HOST_DIR/pgsql":"$LOG_CONTAINER_DIR" \
-			  --workdir "$CONTAINER_DIR" \
-			  $DATABASE_IMAGE_PGSQL
-		fi;
-	else
-		echo "$DATABASE_CONTAINER_PGSQL_NAME started"
-	fi;
-
-fi;
-
-docker run \
-  --interactive \
-  --tty \
-  --rm \
-  --name $CONTAINER_NAME \
-  --env COMPOSER_HOME="$COMPOSER_CONTAINER_DIR" \
-  --env MYSQL_USER="$MYSQL_USER" \
-  --env MYSQL_PASSWORD="$MYSQL_PASSWORD" \
-  --env MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
-  --env POSTGRES_USER="$POSTGRES_USER" \
-  --env POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
-  --env PGDATA="$PGDATA" \
-  --volume "$HOST_DIR":"$CONTAINER_DIR" \
-  --volume "$COMPOSER_HOST_DIR":"$COMPOSER_CONTAINER_DIR" \
-  --volume "$DATA_HOST_DIR":"$DATA_CONTAINER_DIR" \
-  --volume "$LOG_HOST_DIR/apache":"$LOG_CONTAINER_DIR" \
-  --workdir "$CONTAINER_DIR" \
-  --publish $PORT_HOST:$PORT_CONTAINER \
-  --user www-data:www-data \
-  $DOCKERLINK \
-  $BASE_IMAGE \
-  /bin/bash
+title "DONE"
+echo "Everything is prepped. Go to $LOCAL_DIR and run"
+echo "> docker-compose up"
+echo "Then open your browser and point it to \`localhost:$PORT_HOST\`"

@@ -1,14 +1,13 @@
-confirm () {
-    # call with a prompt string or use a default
-    read -r -p "${1:-Are you sure? [y/N]} " response
-    case $response in
-        [yY][eE][sS]|[yY]) 
-            true
-            ;;
-        *)
-            false
-            ;;
-    esac
-}
-echo "this will remove the entire container data"
-confirm && rm -rf container
+# vi:syntax=sh
+#!/usr/bin/env bash
+
+source ./files/utils/confirm.sh
+
+DIR="$PWD/container"
+REL=".${DIR#$PWD}"
+if [ -d "$DIR" ]; then
+	confirm "Are you sure you want to remove the entire data in $REL?" && rm -rf $DIR
+else
+	echo "Nothing found at $REL, not doing anything"
+	exit 1
+fi

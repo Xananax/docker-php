@@ -2,9 +2,10 @@
     <body>
     <p>
         Hello World! Your docker is working. Edit files in <br/>
-        <a href="file://%HOST_DIR%">%HOST_DIR%</a> to get started<br/>
+        <a href="file://%DOCUMENT_DIR%">%DOCUMENT_DIR%</a> to get started<br/>
         Your databases are in:<br/>
-        <a href="file://%DATA_HOST_DIR%">%DATA_HOST_DIR%</a><br/>
+        <a href="file://%DATA_DIR%">%DATA_DIR%</a><br/>
+        You can access the files in your host on port `%PORT_HOST%`
     </p>
     <p>
         if you can read the below, php works:
@@ -17,8 +18,8 @@
     <ul>
 <?php
 
-$POSTGRES_USER="%POSTGRES_USER%";
-$POSTGRES_PASSWORD="%POSTGRES_PASSWORD%";
+$PGSQL_USER="%PGSQL_USER%";
+$PGSQL_PASSWORD="%PGSQL_PASSWORD%";
 $MYSQL_USER="%MYSQL_USER%";
 $MYSQL_PASSWORD="%MYSQL_PASSWORD%";
 
@@ -36,7 +37,7 @@ function failure($n,$z){
 
 function test($name,$host,$user,$pass){
     title("PDO:$name");
-    echo "<ul>--";
+    echo "<ul>";
     try{
         if($user){
             $dsn="$name:host=$host;user=$user;password=$pass";
@@ -54,8 +55,8 @@ function test($name,$host,$user,$pass){
 }
 
 test('sqlite',":memory",'','');
-test('mysql','%DATABASE_CONTAINER_MYSQL_NAME%:3306',$MYSQL_USER,$MYSQL_PASSWORD);
-test('pgsql','%DATABASE_CONTAINER_PGSQL_NAME%:5432',$POSTGRES_USER,$POSTGRES_PASSWORD);
+test('mysql','%MYSQL_CONTAINER_NAME%:3306',$MYSQL_USER,$MYSQL_PASSWORD);
+test('pgsql','%PGSQL_CONTAINER_NAME%:5432',$PGSQL_USER,$PGSQL_PASSWORD);
 
 ?>
     </ul>
