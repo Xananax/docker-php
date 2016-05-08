@@ -106,6 +106,8 @@ Currently, two install scripts are available:
 - `silverstripe`: A silverstripe installation through composer, with support for sqlite3 and some plugins. Check the file for more information.
 - `drupal`: A bare-bones drupal installation (no drush, no drupal console, no automated settings.php generation)
 
+These are not supposed to be the end-all of installation, just starting points to use. It would probably be better to tuck them in a DockerFile and use them as images in the generated `docker-compose.yml`.
+
 ----
 
 
