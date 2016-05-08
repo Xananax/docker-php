@@ -2,12 +2,32 @@
 #!/usr/bin/env bash
 
 source ./files/utils/confirm.sh
+source ./files/utils/docker_remove_all_containers.sh
 
 DIR="$PWD/container"
 REL=".${DIR#$PWD}"
+FILE="$PWD/docker-compose.yml"
+
 if [ -d "$DIR" ]; then
-	confirm "Are you sure you want to remove the entire data in $REL?" && rm -rf $DIR && rm -rf docker-compose.yml
+  DEL_DIR=`confirm "Remove all data in \`$REL\` and the generated docker file?"`;
+  if [ "$DEL_DIR" == "yes" ]; then
+    rm -rf $DIR
+  fi
 else
-	echo "Nothing found at $REL, no need to remove anything"
-	exit 1
+  echo "Nothing found at \`$REL\`, no need to remove anything"
+  exit 1
+fi
+
+if [ -f "$FILE" ]; then
+  DEL_FILE=`confirm "Remove generated docker file?"`;
+  if [ "$DEL_FILE" == "yes"  ]; then
+    rm -rf $FILE
+  fi
+else
+  echo "No \`.${FILE#$PWD}\` found, nothing to delete"
+fi
+
+DEL_CONTAINERS=`confirm "Remove all existing containers?"`
+if [ "$DEL_CONTAINERS" == "yes" ]; then
+  docker_remove_all_containers
 fi
