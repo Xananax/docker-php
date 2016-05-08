@@ -70,17 +70,17 @@ PGSQL_DATA_DIR_REL=".${PGSQL_DATA_DIR#$ROOT}"
 COMPOSER_CACHE_DIR_REL=".${COMPOSER_CACHE_DIR#$ROOT}"
 DATA_DIR_REL=".${DATA_DIR#$ROOT}"
 
-SERVER_DATA_DIR_DOCKER=".${SERVER_DATA_DIR#$LOCAL_DIR}"
-DOCUMENT_DIR_DOCKER=".${DOCUMENT_DIR#$LOCAL_DIR}"
-LOG_DIR_DOCKER=".${LOG_DIR#$LOCAL_DIR}"
-SERVER_LOG_DIR_DOCKER=".${SERVER_LOG_DIR#$LOCAL_DIR}"
-MYSQL_LOG_DIR_DOCKER=".${MYSQL_LOG_DIR#$LOCAL_DIR}"
-PGSQL_LOG_DIR_DOCKER=".${PGSQL_LOG_DIR#$LOCAL_DIR}"
-MODELS_DIR_DOCKER=".${MODELS_DIR#$LOCAL_DIR}"
-MYSQL_DATA_DIR_DOCKER=".${MYSQL_DATA_DIR#$LOCAL_DIR}"
-PGSQL_DATA_DIR_DOCKER=".${PGSQL_DATA_DIR#$LOCAL_DIR}"
-COMPOSER_CACHE_DIR_DOCKER=".${COMPOSER_CACHE_DIR#$LOCAL_DIR}"
-DATA_DIR_DOCKER=".${DATA_DIR#$LOCAL_DIR}"
+SERVER_DATA_DIR_DOCKER=".${SERVER_DATA_DIR#$GLOBAL_DIR}"
+DOCUMENT_DIR_DOCKER=".${DOCUMENT_DIR#$GLOBAL_DIR}"
+LOG_DIR_DOCKER=".${LOG_DIR#$GLOBAL_DIR}"
+SERVER_LOG_DIR_DOCKER=".${SERVER_LOG_DIR#$GLOBAL_DIR}"
+MYSQL_LOG_DIR_DOCKER=".${MYSQL_LOG_DIR#$GLOBAL_DIR}"
+PGSQL_LOG_DIR_DOCKER=".${PGSQL_LOG_DIR#$GLOBAL_DIR}"
+MODELS_DIR_DOCKER=".${MODELS_DIR#$GLOBAL_DIR}"
+MYSQL_DATA_DIR_DOCKER=".${MYSQL_DATA_DIR#$GLOBAL_DIR}"
+PGSQL_DATA_DIR_DOCKER=".${PGSQL_DATA_DIR#$GLOBAL_DIR}"
+COMPOSER_CACHE_DIR_DOCKER=".${COMPOSER_CACHE_DIR#$GLOBAL_DIR}"
+DATA_DIR_DOCKER=".${DATA_DIR#$GLOBAL_DIR}"
 
 function title(){
 	echo ""
@@ -129,7 +129,7 @@ function replace(){
 	  -e 's,%PGSQL_DATABASE%,'"$PGSQL_DATABASE"',g' \
 	  -e 's,%COMPOSER_CACHE_DIR%,'"$COMPOSER_CACHE_DIR"',g' \
 	  -e 's,%COMPOSER_CACHE_DIR_REL%,'"$COMPOSER_CACHE_DIR_DOCKER"',g' \
-	  -e 's,%DATA_DIR_REL%,'"$DATA_DIR_REL"',g' \
+	  -e 's,%DATA_DIR_REL%,'"$DATA_DIR_DOCKER"',g' \
 	  -e 's,%SERVER_LOG_DIR_REL%,'"$SERVER_LOG_DIR_DOCKER"',g' \
 	  -e 's,%DEPENDS_ON%,'"$DEPENDS_ON"',g' \
 	  -e 's,%VERSION%,'"$VERSION"',g' \
@@ -221,7 +221,7 @@ function check_file () {
 	REL_FILE=".${1#$ROOT}"
 	if [ ! -f "$1" ]; then
 		echo "\`$REL_FILE\` does not exist, attempting to create it"
-		replace "$1" "$2"
+		replace "$2" "$1"
 	else
 		echo "\`$REL_FILE\` exists, skipping creation"
 	fi
@@ -240,6 +240,7 @@ if [ "$USE_PGSQL" ]; then
 fi
 
 if [ -f "$RUN_FILE" ]; then
+    title "EASY INSTALLATION FILE"
 	echo "Install file found for $PROJECT_NAME, will copy in server root directory"
 	check_file "$SERVER_DATA_DIR/install.sh" "$RUN_FILE"
 	check_file "$GLOBAL_DIR/run_server_install" "$MODELS_DIR/run_server_install.sh"
@@ -251,14 +252,17 @@ echo "Everything is prepped. Now just cd into \`.${LOCAL_DIR#$PWD}\` and run"
 echo "  docker-compose up"
 echo "Then open your browser and point it to"
 echo "  \`localhost:$PORT_HOST\`"
+echo "to remove everything, run"
+echo "  ./clean $LOCAL_DIR"
 echo "Enjoy!"
 echo ""
 
 RUN_COMPOSE=`confirm "Do you want to run docker-compose?"`
 
-if [ "$CONTINUE" == "no" ]; then
+if [ "$RUN_COMPOSE" == "no" ]; then
 	echo "exiting..."
 	exit 0
+else
+    cd $LOCAL_DIR && docker-compose up
 fi;
 
-cd $LOCAL_DIR && docker-compose up
