@@ -26,7 +26,7 @@ services:
       - %MYSQL_DATA_DIR_REL%:/var/lib/mysql
       - %MYSQL_LOG_DIR_REL%:/var/log
   %PGSQL_CONTAINER_NAME%:
-    image: %MYSQL_IMAGE%
+    image: %PGSQL_IMAGE%
     container_name: %PGSQL_CONTAINER_NAME%
     environment:
       POSTGRES_USER: %PGSQL_USER%
