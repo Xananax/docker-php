@@ -198,15 +198,15 @@ else
 fi
 
 title "DOCKER-COMPOSE"
-if [ ! -f "$LOCAL_DIR/docker-compose.yml" ]; then
+if [ ! -f "$ROOT/docker-compose.yml" ]; then
 	echo "\`docker-compose does\` not exist, attempting to create it"
-	replace "$MODELS_DIR/docker-compose.yml" "$LOCAL_DIR/docker-compose.yml"
+	replace "$MODELS_DIR/docker-compose.yml" "$ROOT/docker-compose.yml"
 else
 	echo "\`docker-compose.yml\` exists, skipping creation"
 fi
 
 title "DONE"
-echo "Everything is prepped. Go to $LOCAL_DIR and run"
+echo "Everything is prepped. Now just run"
 echo "  docker-compose up"
 echo "Then open your browser and point it to"
 echo "  \`localhost:$PORT_HOST\`"

@@ -16,7 +16,6 @@ USE_MYSQL=true USE_PGSQL=true ./build
 ```
 Then:
 ```sh
-cd container
 docker-compose up
 ```
 
@@ -41,7 +40,9 @@ The process of running `./build` will create a directory `./container`. This dir
 - `www/`: Server root
   - `www/html/`: Document root
     - `www/html/index.php`: A generated index.php with `<?php info()?>` and other useful diagnostics.
-- `docker-compose.yml`: A generated docker-compose
+
+
+a generated `docker-compose.yml` will also be created in the current directory.
 
 Many environment variables are available to control where and how all of this fits.  
 
