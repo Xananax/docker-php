@@ -132,6 +132,20 @@ To map the 3000 port to a local 3000 port with nginx:
       }
     }
 ```
+If you wanted to map it to the local 80 port, swap `listen 3000` with `listen 80`.
+
+------
+
+Map the 3000 port to a url
+
+```apache
+<VirtualHost localhost:3000>
+  ServerName www.example.com
+  DocumentRoot /www
+</VirtualHost>
+```
+
+------
 
 If you run the container in interactive, in the container's shell you'll need to run
 
