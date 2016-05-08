@@ -16,7 +16,8 @@ USE_MYSQL=true USE_PGSQL=true PROJECT=wordpress ./build
 ```
 Then:
 ```sh
-docker-compose up
+cd wordpress
+./start
 ```
 
 Then open your browser and point it to [localhost:3000](http://localhost:3000).

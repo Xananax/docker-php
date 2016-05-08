@@ -110,6 +110,7 @@ function replace(){
 	  -e 's,%SERVER_DATA_DIR_REL%,'"$SERVER_DATA_DIR_DOCKER"',g' \
 	  -e 's,%DOCUMENT_DIR%,'"$DOCUMENT_DIR"',g' \
 	  -e 's,%DOCUMENT_DIR_REL%,'"$DOCUMENT_DIR_DOCKER"',g' \
+	  -e 's,%LOG_DIR_REL%,'"$LOG_DIR_REL"',g' \
 	  -e 's,%DATA_DIR%,'"$DATA_DIR"',g' \
 	  -e 's,%DB_NAME%,'"$DB_NAME"',g' \
 	  -e 's,%MYSQL_IMAGE%,'"$MYSQL_IMAGE"',g' \
@@ -232,6 +233,7 @@ check_file "$GLOBAL_DIR/docker-compose.yml" "$MODELS_DIR/docker-compose.yml"
 
 title "UTILITIES"
 check_file "$GLOBAL_DIR/connect_server" "$MODELS_DIR/connect_server.sh"
+check_file "$GLOBAL_DIR/start" "$MODELS_DIR/start.sh"
 if [ "$USE_MYSQL" ]; then
 	check_file "$GLOBAL_DIR/connect_mysql" "$MODELS_DIR/connect_mysql.sh"
 fi
@@ -248,21 +250,20 @@ if [ -f "$RUN_FILE" ]; then
 fi
 
 title "DONE"
-echo "Everything is prepped. Now just cd into \`.${LOCAL_DIR#$PWD}\` and run"
-echo "  docker-compose up"
+echo "Everything is prepped. Now just cd into \`.${GLOBAL_DIR#$PWD}\` and run"
+echo "  ./start"
 echo "Then open your browser and point it to"
 echo "  \`localhost:$PORT_HOST\`"
 echo "to remove everything, run"
-echo "  ./clean $LOCAL_DIR"
+echo "  ./clean ${GLOBAL_DIR#$PWD}"
 echo "Enjoy!"
 echo ""
 
-RUN_COMPOSE=`confirm "Do you want to run docker-compose?"`
+RUN_COMPOSE=$(confirm "Do you want me to start the container for you?")
 
 if [ "$RUN_COMPOSE" == "no" ]; then
-	echo "exiting..."
-	exit 0
+    echo "exiting..."
+    exit 0
 else
-    cd $LOCAL_DIR && docker-compose up
+    cd $GLOBAL_DIR && ./start
 fi;
-

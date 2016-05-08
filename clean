@@ -18,6 +18,7 @@ else
   exit 1
 fi
 
+echo "WARNING: Answering yes below will remove ALL the containers on this machine"
 DEL_CONTAINERS=`confirm "Remove all existing containers?"`
 if [ "$DEL_CONTAINERS" == "yes" ]; then
   docker_remove_all_containers
