@@ -6,7 +6,7 @@ source ./files/utils/confirm.sh
 DIR="$PWD/container"
 REL=".${DIR#$PWD}"
 if [ -d "$DIR" ]; then
-	confirm "Are you sure you want to remove the entire data in $REL?" && rm -rf $DIR
+	confirm "Are you sure you want to remove the entire data in $REL?" && rm -rf $DIR && rm -rf docker-compose.yml
 else
 	echo "Nothing found at $REL, no need to remove anything"
 	exit 1
