@@ -12,7 +12,7 @@ Optionally uses [MariaDB](https://hub.docker.com/_/mariadb/) and/or [PostGresSQL
 ```sh
 git clone github.com:Xananax/docker-php && \
 cd docker-php && \
-USE_MYSQL=true USE_PGSQL=true ./build
+USE_MYSQL=true USE_PGSQL=true PROJECT=wordpress ./build
 ```
 Then:
 ```sh
@@ -21,7 +21,7 @@ docker-compose up
 
 Then open your browser and point it to [localhost:3000](http://localhost:3000).
 
-Edit files in `container/www/html`.
+Edit files in `wordpress/container/www/html`.
 
 ------
 
@@ -29,34 +29,38 @@ Edit files in `container/www/html`.
 
 The process of running `./build` will create a directory `./container`. This directory will contain:
 
-- `composer/`: The `composer` cache, exposed as a volume so it can be reused
-- `data/`: Will hold that Postgres/MariaDB databases
-  - `data/pgsql/`: Contains Postgres Databases
-  - `data/mysql/`: Contains MariaDB Databases
-- `log/`: Will hold Postgres/MariaDB/Apache logs
-  - `log/pgsql/`: Contains Postgres logs
-  - `log/mysql/`: Contains MariaDB logs
-  - `log/apache/`: Contains Apache logs
-- `www/`: Server root
-  - `www/html/`: Document root
-    - `www/html/index.php`: A generated index.php with `<?php info()?>` and other useful diagnostics.
-
-
-a generated `docker-compose.yml` will also be created in the current directory.
+- `$PROJECT_NAME`: Whatever you named the `$PROJECT` environment variable
+  - `docker-compose.yml`: generated file to bring your container up or down
+  - `connect_*`: generated files for quick access into the containers. There'll be at least `connect_server`; `connect_mysql` and/or `connect_pgsql` are generated if you select the respective databases to be included in the build.
+  - `run_server_install`: An installation file that can be created if an install script is found for the `$PROJECT_NAME` provived. Current install scripts are `silverstripe` and `wordpress`
+  - `container/`: Contains everything related to the different containers
+    - `composer/`: The `composer` cache, exposed as a volume so it can be reused
+    - `data/`: Will hold that Postgres/MariaDB databases
+      - `pgsql/`: Contains Postgres Databases
+      - `mysql/`: Contains MariaDB Databases
+    - `log/`: Will hold Postgres/MariaDB/Apache logs
+      - `pgsql/`: Contains Postgres logs
+      - `mysql/`: Contains MariaDB logs
+      - `apache/`: Contains Apache logs
+    - `www/`: Server root
+      - `html/`: Document root
+        - `index.php`: A generated index.php with `<?php info()?>` and other useful diagnostics.
 
 Many environment variables are available to control where and how all of this fits.  
 
 Other available environment variables are:
 
 - *Main Settings*
+  - `PROJECT`: The name of the project. Defaults to `"wordpress"`
+  - `LOCAL_DIR`: Where files will be built. Defaults to `$PROJECT`
   - `PORT`: Port mapped to the container's port `80`. Defaults to `3000`
   - `USE_MYSQL`: Sets MariaDB usage on. Defaults to `false`
   - `USE_PGSQL`: Sets Postgres usage on. Defaults to `false`
   - `DB_USER`: Default database user. Defaults to `"user"`
   - `DB_PASSWORD`: Default database password. Defaults to `"password"`
-  - `DB_NAME`: Default database name. Defaults to `"test"`
+  - `DB_NAME`: Default database name. Defaults to `$PROJECT`
 - *Directories*
-  - `LOCAL_DIR`: The base directory where all the directory structure gets built. Defaults to `./container`
+  - `LOCAL_DIR`: The base directory where all the directory structure gets built, relative to `$LOCAL_DIR`. Defaults to `./container`
   - `SERVER_DATA_DIR`: Name of the server root, relative to `$LOCAL_DIR`. Defaults to `www`
   - `DOCUMENT_DIR`: Name of the document root, relative to `$SERVER_DATA_DIR`. Defaults to `html`
   - `COMPOSER_CACHE_DIR`: Name of the directory where composer files are cached, relative to `$LOCAL_DIR`. Defaults to `composer`
@@ -68,7 +72,7 @@ Other available environment variables are:
   - `BASE_IMAGE`: The base image you're building. Expected to be able to run PHP and a server. Defaults to `xananax/php`
   - `PGSQL_IMAGE`: The name of the Postgres Image you're building from. Defaults to `postgres`
   - `MYSQL_IMAGE`: The base MySQL image you're building from. Default to `mariadb`
-  - `CONTAINER_NAME`: Name of the main container you're building. Defaults to `"test"`
+  - `CONTAINER_NAME`: Name of the main container you're building. Defaults to `$PROJECT`
   - `MYSQL_CONTAINER_NAME`: The name of the created MySQL container. Defaults to `"database_mysql"`
   - `PGSQL_CONTAINER_NAME`: The name of the created Postgres container. Defaults to `"database_postgres"`
 - *MariaDB Settings*

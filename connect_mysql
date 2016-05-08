@@ -1,1 +1,0 @@
-docker exec -it database_mysql sh -c mysql

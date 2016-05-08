@@ -1,1 +1,0 @@
-docker exec -it database_pgsql su -s /bin/sh - postgres -c "sh -c psql"

@@ -8,46 +8,52 @@ source ./files/utils/check_dir.sh
 VERSION="0.1"
 ROOT="$PWD"
 MODELS_DIR="$PWD/files"
-DB_USER="${DB_USER:-user}"
-DB_PASSWORD="${DB_PASSWORD:-password}"
-DB_NAME="${DB_NAME:-test}"
-PGSQL_USER="${PGSQL_USER:-$DB_USER}"
-PGSQL_PASSWORD="${PGSQL_PASSWORD:-$DB_PASSWORD}"
-MYSQL_USER="${MYSQL_USER:-$DB_USER}"
-MYSQL_PASSWORD="${MYSQL_PASSWORD:-$DB_PASSWORD}"
-MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$MYSQL_PASSWORD}"
-MYSQL_DATABASE="${MYSQL_DATABASE:-$DB_NAME}"
+
+PROJECT_NAME="${PROJECT:-wordpress}"
+PORT_HOST="${PORT:-3000}"
+USE_MYSQL="${USE_MYSQL:0}"
+USE_PGSQL="${USE_PGSQL:0}"
+
+CONTAINER_NAME="${CONTAINER_NAME:-$PROJECT_NAME}"
 BASE_IMAGE="${BASE_IMAGE:-xananax/php}"
-# possible values: mariadb, postgres
-MYSQL_IMAGE="${MYSQL_IMAGE:-mariadb}"
-MYSQL_CONTAINER_NAME="${MYSQL_CONTAINER_NAME:-database_mysql}"
-PGSQL_IMAGE="${PGSQL_IMAGE:-postgres}"
-PGSQL_CONTAINER_NAME="${PGSQL_CONTAINER_NAME:-database_pgsql}"
-PGSQL_DATABASE="${PGSQL_DATABASE:-$DB_NAME}"
-LOCAL_DIR="${LOCAL_DIR:-$PWD/container}"
-# Container name
-CONTAINER_NAME="${CONTAINER_NAME:-test}"
-# Host directory for source files. The webserver root should be in a /html sub directory
+
+GLOBAL_DIR="${GLOBAL_DIR:-$PROJECT_NAME}"
+LOCAL_DIR="$GLOBAL_DIR"/"${LOCAL_DIR:-container}"
 SERVER_DATA_DIR="$LOCAL_DIR"/"${SERVER_DATA_DIR:-www}"
 DOCUMENT_DIR="$SERVER_DATA_DIR/html"
-# Directory for composer cache
 COMPOSER_CACHE_DIR="$LOCAL_DIR"/"${COMPOSER_CACHE_DIR:-composer}"
-# Directory for storing databases
 DATA_DIR="$LOCAL_DIR"/"${DATA_DIR:-data}"
 MYSQL_DATA_DIR="$DATA_DIR"/"${MYSQL_DATA_DIR:-mysql}"
 PGSQL_DATA_DIR="$DATA_DIR"/"${PGSQL_DATA_DIR:-pgsql}"
-# Port to map the docker's 80 port to.
 LOG_DIR="$LOCAL_DIR"/"${LOG_DIR:-log}"
 SERVER_LOG_DIR="$LOG_DIR/apache"
 MYSQL_LOG_DIR="$LOG_DIR/mysql"
 PGSQL_LOG_DIR="$LOG_DIR/pgsql"
-PORT_HOST="${PORT:-3000}"
-USE_MYSQL="${USE_MYSQL:0}"
-USE_PGSQL="${USE_PGSQL:0}"
+
+DB_USER="${DB_USER:-user}"
+DB_PASSWORD="${DB_PASSWORD:-password}"
+DB_NAME="${DB_NAME:-$PROJECT_NAME}"
+
+MYSQL_USER="${MYSQL_USER:-$DB_USER}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:-$DB_PASSWORD}"
+MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$MYSQL_PASSWORD}"
+MYSQL_IMAGE="${MYSQL_IMAGE:-mariadb}"
+MYSQL_CONTAINER_NAME="${MYSQL_CONTAINER_NAME:-database_mysql}"
+MYSQL_DATABASE="${MYSQL_DATABASE:-$DB_NAME}"
+
+PGSQL_USER="${PGSQL_USER:-$DB_USER}"
+PGSQL_PASSWORD="${PGSQL_PASSWORD:-$DB_PASSWORD}"
+PGSQL_IMAGE="${PGSQL_IMAGE:-postgres}"
+PGSQL_CONTAINER_NAME="${PGSQL_CONTAINER_NAME:-database_pgsql}"
+PGSQL_DATABASE="${PGSQL_DATABASE:-$DB_NAME}"
+
 # PGSQL
 PORT_CONTAINER=80
 # User ID of www-data in the docker
 CONTAINER_USER_ID=33
+
+RUN_FILE="$MODELS_DIR/first-run/$PROJECT_NAME.sh"
+
 if [ "$USE_MYSQL" ] || [ "$USE_PGSQL" ]; then
 	USING_DATABASE=true
 fi
@@ -63,6 +69,18 @@ MYSQL_DATA_DIR_REL=".${MYSQL_DATA_DIR#$ROOT}"
 PGSQL_DATA_DIR_REL=".${PGSQL_DATA_DIR#$ROOT}"
 COMPOSER_CACHE_DIR_REL=".${COMPOSER_CACHE_DIR#$ROOT}"
 DATA_DIR_REL=".${DATA_DIR#$ROOT}"
+
+SERVER_DATA_DIR_DOCKER=".${SERVER_DATA_DIR#$LOCAL_DIR}"
+DOCUMENT_DIR_DOCKER=".${DOCUMENT_DIR#$LOCAL_DIR}"
+LOG_DIR_DOCKER=".${LOG_DIR#$LOCAL_DIR}"
+SERVER_LOG_DIR_DOCKER=".${SERVER_LOG_DIR#$LOCAL_DIR}"
+MYSQL_LOG_DIR_DOCKER=".${MYSQL_LOG_DIR#$LOCAL_DIR}"
+PGSQL_LOG_DIR_DOCKER=".${PGSQL_LOG_DIR#$LOCAL_DIR}"
+MODELS_DIR_DOCKER=".${MODELS_DIR#$LOCAL_DIR}"
+MYSQL_DATA_DIR_DOCKER=".${MYSQL_DATA_DIR#$LOCAL_DIR}"
+PGSQL_DATA_DIR_DOCKER=".${PGSQL_DATA_DIR#$LOCAL_DIR}"
+COMPOSER_CACHE_DIR_DOCKER=".${COMPOSER_CACHE_DIR#$LOCAL_DIR}"
+DATA_DIR_DOCKER=".${DATA_DIR#$LOCAL_DIR}"
 
 function title(){
 	echo ""
@@ -89,32 +107,34 @@ function replace(){
 	  -e 's,%PORT_HOST%,'"$PORT_HOST"',g' \
 	  -e 's,%BASE_IMAGE%,'"$BASE_IMAGE"',g' \
 	  -e 's,%CONTAINER_NAME%,'"$CONTAINER_NAME"',g' \
-	  -e 's,%SERVER_DATA_DIR_REL%,'"$SERVER_DATA_DIR_REL"',g' \
+	  -e 's,%SERVER_DATA_DIR_REL%,'"$SERVER_DATA_DIR_DOCKER"',g' \
 	  -e 's,%DOCUMENT_DIR%,'"$DOCUMENT_DIR"',g' \
-	  -e 's,%DOCUMENT_DIR_REL%,'"$DOCUMENT_DIR_REL"',g' \
+	  -e 's,%DOCUMENT_DIR_REL%,'"$DOCUMENT_DIR_DOCKER"',g' \
 	  -e 's,%DATA_DIR%,'"$DATA_DIR"',g' \
+	  -e 's,%DB_NAME%,'"$DB_NAME"',g' \
 	  -e 's,%MYSQL_IMAGE%,'"$MYSQL_IMAGE"',g' \
 	  -e 's,%MYSQL_USER%,'"$MYSQL_USER"',g' \
 	  -e 's,%MYSQL_PASSWORD%,'"$MYSQL_PASSWORD"',g' \
 	  -e 's,%MYSQL_ROOT_PASSWORD%,'"$MYSQL_ROOT_PASSWORD"',g' \
-	  -e 's,%MYSQL_DATA_DIR_REL%,'"$MYSQL_DATA_DIR_REL"',g' \
-	  -e 's,%MYSQL_LOG_DIR_REL%,'"$MYSQL_LOG_DIR_REL"',g' \
+	  -e 's,%MYSQL_DATA_DIR_REL%,'"$MYSQL_DATA_DIR_DOCKER"',g' \
+	  -e 's,%MYSQL_LOG_DIR_REL%,'"$MYSQL_LOG_DIR_DOCKER"',g' \
 	  -e 's,%MYSQL_CONTAINER_NAME%,'"$MYSQL_CONTAINER_NAME"',g' \
 	  -e 's,%MYSQL_DATABASE%,'"$MYSQL_DATABASE"',g' \
 	  -e 's,%PGSQL_IMAGE%,'"$PGSQL_IMAGE"',g' \
 	  -e 's,%PGSQL_USER%,'"$PGSQL_USER"',g' \
 	  -e 's,%PGSQL_PASSWORD%,'"$PGSQL_PASSWORD"',g' \
-	  -e 's,%PGSQL_DATA_DIR_REL%,'"$PGSQL_DATA_DIR_REL"',g' \
-	  -e 's,%PGSQL_LOG_DIR_REL%,'"$PGSQL_LOG_DIR_REL"',g' \
+	  -e 's,%PGSQL_DATA_DIR_REL%,'"$PGSQL_DATA_DIR_DOCKER"',g' \
+	  -e 's,%PGSQL_LOG_DIR_REL%,'"$PGSQL_LOG_DIR_DOCKER"',g' \
 	  -e 's,%PGSQL_CONTAINER_NAME%,'"$PGSQL_CONTAINER_NAME"',g' \
 	  -e 's,%PGSQL_DATABASE%,'"$PGSQL_DATABASE"',g' \
 	  -e 's,%COMPOSER_CACHE_DIR%,'"$COMPOSER_CACHE_DIR"',g' \
-	  -e 's,%COMPOSER_CACHE_DIR_REL%,'"$COMPOSER_CACHE_DIR_REL"',g' \
+	  -e 's,%COMPOSER_CACHE_DIR_REL%,'"$COMPOSER_CACHE_DIR_DOCKER"',g' \
 	  -e 's,%DATA_DIR_REL%,'"$DATA_DIR_REL"',g' \
-	  -e 's,%SERVER_LOG_DIR_REL%,'"$SERVER_LOG_DIR_REL"',g' \
+	  -e 's,%SERVER_LOG_DIR_REL%,'"$SERVER_LOG_DIR_DOCKER"',g' \
 	  -e 's,%DEPENDS_ON%,'"$DEPENDS_ON"',g' \
 	  -e 's,%VERSION%,'"$VERSION"',g' \
 	>> "$2"
+	chmod +777 "$2"
 }
 
 title "BASE"
@@ -189,7 +209,7 @@ title "MAIN FILES"
 if [ ! -d "$DOCUMENT_DIR" ]; then
 	echo "\`$DOCUMENT_DIR_REL\` does not exist, attempting to create it"
 	mkdir -p "$DOCUMENT_DIR"
-	replace "$MODELS_DIR/bashrc" "$SERVER_DATA_DIR/.bashrc"
+	replace "$MODELS_DIR/bashrc.sh" "$SERVER_DATA_DIR/.bashrc"
 	replace "$MODELS_DIR/index.php" "$DOCUMENT_DIR/index.php"
 	chmod -R +777 $SERVER_DATA_DIR
 	sudo chown -R $CONTAINER_USER_ID:$CONTAINER_USER_ID $SERVER_DATA_DIR
@@ -197,16 +217,37 @@ else
 	echo "\`$DOCUMENT_DIR_REL\` exists, skipping creation"
 fi
 
+function check_file () {
+	REL_FILE=".${1#$ROOT}"
+	if [ ! -f "$1" ]; then
+		echo "\`$REL_FILE\` does not exist, attempting to create it"
+		replace "$1" "$2"
+	else
+		echo "\`$REL_FILE\` exists, skipping creation"
+	fi
+}
+
 title "DOCKER-COMPOSE"
-if [ ! -f "$ROOT/docker-compose.yml" ]; then
-	echo "\`docker-compose does\` not exist, attempting to create it"
-	replace "$MODELS_DIR/docker-compose.yml" "$ROOT/docker-compose.yml"
-else
-	echo "\`docker-compose.yml\` exists, skipping creation"
+check_file "$GLOBAL_DIR/docker-compose.yml" "$MODELS_DIR/docker-compose.yml" 
+
+title "UTILITIES"
+check_file "$GLOBAL_DIR/connect_server" "$MODELS_DIR/connect_server.sh"
+if [ "$USE_MYSQL" ]; then
+	check_file "$GLOBAL_DIR/connect_mysql" "$MODELS_DIR/connect_mysql.sh"
+fi
+if [ "$USE_PGSQL" ]; then
+	check_file "$GLOBAL_DIR/connect_pgsql" "$MODELS_DIR/connect_pgsql.sh"
+fi
+
+if [ -f "$RUN_FILE" ]; then
+	echo "Install file found for $PROJECT_NAME, will copy in server root directory"
+	check_file "$SERVER_DATA_DIR/install.sh" "$RUN_FILE"
+	check_file "$GLOBAL_DIR/run_server_install" "$MODELS_DIR/run_server_install.sh"
+	echo "use ./run_server_install in \`.${GLOBAL_DIR#$PWD}\` to run the installation"
 fi
 
 title "DONE"
-echo "Everything is prepped. Now just run"
+echo "Everything is prepped. Now just cd into \`.${LOCAL_DIR#$PWD}\` and run"
 echo "  docker-compose up"
 echo "Then open your browser and point it to"
 echo "  \`localhost:$PORT_HOST\`"
@@ -220,4 +261,4 @@ if [ "$CONTINUE" == "no" ]; then
 	exit 0
 fi;
 
-docker-compose up
+cd $LOCAL_DIR && docker-compose up
