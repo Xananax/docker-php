@@ -52,3 +52,6 @@ RUN php -r "unlink('composer-setup.php');"
 
 # Add www-data to sudoers
 RUN adduser www-data sudo
+WORKDIR /var/www
+EXPOSE 80
+CMD ["apache2-foreground"]

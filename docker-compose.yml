@@ -2,21 +2,23 @@ version: '2'
 services:
   server:
     build: .
-    command: /bin/bash
     container_name: test
     image: xananax/php
-    links:
+    depends_on:
       - db_mysql
       - db_postgres
     ports:
       - 8080:80
     volumes:
-      - "composer:/composer"
-      - "data:/data"
-      - "log_server:/var/log"
-      - "data_server:/var/www"
+      - ./container/composer:/composer
+      - ./container/data:/data
+      - ./container/log/apache:/var/log
+      - ./container/www:/var/www
+      - ./container/www/html:/var/www/html
   db_mysql:
     image: mariadb
+    logging:
+      driver: none
     container_name: db_mysql
     environment:
       MYSQL_USER: user
@@ -24,26 +26,18 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
     volumes:
-      - "data_mysql:/var/lib/mysql"
-      - "log_mysql:/var/log"
+      - ./container/data/mysql:/var/lib/mysql
+      - ./container/log/mysql:/var/log
   db_postgres:
     image: postgres
     container_name: db_postgres
+    logging:
+      driver: none
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: test
       PGDATA: /data
     volumes:
-      - "data_pgsql:/data"
-      - "log_pgsql:/var/log"
-volumes:
-  - composer:./container/composer
-  - data:./container/data
-  - data_mysql:./container/data/mysql
-  - data_pgsql:./container/data/pgsql
-  - log:./container/log
-  - log_pgsql:./container/log/pgsql
-  - log_mysql:./container/log/mysql
-  - log_server:./container/log/apache
-  - data_server:./container/www
+      - ./container/data/pgsql:/data
+      - ./container/log/pgsql:/var/log
