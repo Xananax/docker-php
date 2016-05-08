@@ -32,7 +32,7 @@ The process of running `./build` will create a directory `./container`. This dir
 - `$PROJECT_NAME`: Whatever you named the `$PROJECT` environment variable
   - `docker-compose.yml`: generated file to bring your container up or down
   - `connect_*`: generated files for quick access into the containers. There'll be at least `connect_server`; `connect_mysql` and/or `connect_pgsql` are generated if you select the respective databases to be included in the build.
-  - `run_server_install`: An installation file that can be created if an install script is found for the `$PROJECT_NAME` provived. Current install scripts are `silverstripe` and `wordpress`
+  - `run_server_install`: An installation file that can be created if an install script is found for the `$PROJECT_NAME` provided. See below for more details.
   - `container/`: Contains everything related to the different containers
     - `composer/`: The `composer` cache, exposed as a volume so it can be reused
     - `data/`: Will hold that Postgres/MariaDB databases
@@ -45,6 +45,8 @@ The process of running `./build` will create a directory `./container`. This dir
     - `www/`: Server root
       - `html/`: Document root
         - `index.php`: A generated index.php with `<?php info()?>` and other useful diagnostics.
+
+This directory is portable; once generated, you're free to tuck it wherever is more convenient
 
 Many environment variables are available to control where and how all of this fits.  
 
@@ -85,6 +87,24 @@ Other available environment variables are:
   - `PGSQL_PASSWORD`: Default Postgres password. Defaults to `$DB_PASSWORD`
   - `PGSQL_DATABASE`: The default Postgres database. Default to `$DB_NAME`
 
+----
+
+## Install Scripts
+
+if the `$PROJECT` variable matches the name of an installer in `./files/first-run`, this installer will be setup and ready to run from inside the container:
+
+```sh
+cd PROJECT_NAME
+./run_server_install
+```
+
+These install scripts remove any `index.php` present inside the document root.
+
+Currently, two install scripts are available:
+
+- `wordpress`: A standard wordpress installation. Set up to work with MySQL
+- `silverstripe`: A silverstripe installation through composer, with support for sqlite3 and some plugins. Check the file for more information.
+- `drupal`: A bare-bones drupal installation (no drush, no drupal console, no automated settings.php generation)
 
 ----
 
