@@ -1,21 +1,24 @@
 <html>
     <body>
+    <h1>Hello World</h1>
     <p>
-        Hello World! Your docker is working. Edit files in <br/>
-        <a href="file://%DOCUMENT_DIR%">%DOCUMENT_DIR%</a> to get started<br/>
+        It seems your docker is working. Edit files in <br/>
+        <a href="file://%DOCUMENT_DIR%">%DOCUMENT_DIR%</a> to get started
+    </p><p>
         Your databases are in:<br/>
-        <a href="file://%DATA_DIR%">%DATA_DIR%</a><br/>
-        You can access the files in your host on port `%PORT_HOST%`
+        <a href="file://%DATA_DIR%">%DATA_DIR%</a>
+    </p><p>
+        You can access the files in your host on port `<a href="http://localhost:%PORT_HOST%">http://localhost:%PORT_HOST%</a>`
     </p>
+    <hr/>
     <p>
         if you can read the below, php works:
-    </p>
-    <p>
+    </p><p>
         <?php echo "local directory inside the container: ".__DIR__ ?>
     </p>
     <p>
-    <h2>testing databases</h2>
-    <ul>
+        <h2>testing databases</h2>
+        <ul>
 <?php
 
 $PGSQL_USER="%PGSQL_USER%";
@@ -59,8 +62,11 @@ test('mysql','%MYSQL_CONTAINER_NAME%:3306',$MYSQL_USER,$MYSQL_PASSWORD);
 test('pgsql','%PGSQL_CONTAINER_NAME%:5432',$PGSQL_USER,$PGSQL_PASSWORD);
 
 ?>
-    </ul>
+        </ul>
     </p>
+    <hr/>
+    <br/>
+    <h2>PHP Info Here</h2>
     <?php phpinfo();?>
     </body>
 </html>

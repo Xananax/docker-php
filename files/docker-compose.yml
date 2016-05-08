@@ -12,6 +12,8 @@ services:
       - %SERVER_LOG_DIR_REL%:/var/log
       - %SERVER_DATA_DIR_REL%:/var/www
       - %DOCUMENT_DIR_REL%:/var/www/html
+    environment:
+      VERSION: "%VERSION%"
   %MYSQL_CONTAINER_NAME%:
     image: %MYSQL_IMAGE%
     container_name: %MYSQL_CONTAINER_NAME%

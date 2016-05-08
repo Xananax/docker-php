@@ -8,6 +8,6 @@ REL=".${DIR#$PWD}"
 if [ -d "$DIR" ]; then
 	confirm "Are you sure you want to remove the entire data in $REL?" && rm -rf $DIR
 else
-	echo "Nothing found at $REL, not doing anything"
+	echo "Nothing found at $REL, no need to remove anything"
 	exit 1
 fi

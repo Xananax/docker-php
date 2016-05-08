@@ -5,6 +5,7 @@
 source ./files/utils/confirm.sh
 source ./files/utils/check_dir.sh
 
+VERSION="0.1"
 ROOT="$PWD"
 MODELS_DIR="$PWD/files"
 DB_USER="${DB_USER:-user}"
@@ -65,7 +66,7 @@ DATA_DIR_REL=".${DATA_DIR#$ROOT}"
 
 function title(){
 	echo ""
-	echo "---- $1 ----"
+	echo "----- $1 -----"
 	echo ""
 }
 
@@ -112,6 +113,7 @@ function replace(){
 	  -e 's,%DATA_DIR_REL%,'"$DATA_DIR_REL"',g' \
 	  -e 's,%SERVER_LOG_DIR_REL%,'"$SERVER_LOG_DIR_REL"',g' \
 	  -e 's,%DEPENDS_ON%,'"$DEPENDS_ON"',g' \
+	  -e 's,%VERSION%,'"$VERSION"',g' \
 	>> "$2"
 }
 
@@ -205,5 +207,8 @@ fi
 
 title "DONE"
 echo "Everything is prepped. Go to $LOCAL_DIR and run"
-echo "> docker-compose up"
-echo "Then open your browser and point it to \`localhost:$PORT_HOST\`"
+echo "  docker-compose up"
+echo "Then open your browser and point it to"
+echo "  \`localhost:$PORT_HOST\`"
+echo "Enjoy!"
+echo ""

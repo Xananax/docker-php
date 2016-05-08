@@ -136,7 +136,7 @@ If you wanted to map it to the local 80 port, swap `listen 3000` with `listen 80
 
 ------
 
-Map the 3000 port to a url
+Another example, map the 3000 port to a url in apache
 
 ```apache
 <VirtualHost localhost:3000>
@@ -155,3 +155,7 @@ sudo service apache2 start
 
 To get Apache to start
 
+
+## License
+
+MIT
